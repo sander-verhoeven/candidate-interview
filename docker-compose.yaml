@@ -1,0 +1,20 @@
+networks: 
+  vault:
+    name: vault
+    ipam:
+      config:
+        - subnet: 172.18.1.16/28
+          ip_range: 172.18.1.16/28
+          gateway: 172.18.1.17
+services:
+  vault:
+    networks:
+      - vault
+    image: vault:1.11.11
+    container_name: vault
+    cap_add:
+     - IPC_LOCK
+    ports:
+      - 8200:8200
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=dev
