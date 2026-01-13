@@ -72,7 +72,7 @@ http://{vagrant ip address}:8080/rabbitmq/
 
 ### :clipboard: Tasks
 
-This is the time for you to shine :sun_with_face:
+This is the time for you to shine :sun_with_face:  
 We would like you to complete the following tasks:
 
 - [ ] Keep the current Dev environment.
