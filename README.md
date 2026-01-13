@@ -72,6 +72,7 @@ http://{vagrant ip address}:8080/rabbitmq/
 
 ### :clipboard: Tasks
 
+This is the time for you to shine :sun_with_face:
 We would like you to complete the following tasks:
 
 - [ ] Keep the current Dev environment.
@@ -86,6 +87,8 @@ We would like you to complete the following tasks:
 - [ ] Improve the code.
    - [ ] Terraform plan / apply should be available to run within the Vagrant environment without issues.
 - [ ] Add a README detailing your design decissions.
+
+:warning: We are reviewing your code and decisions, not external tools.
 
 ### :100: Candidate Instructions
 
