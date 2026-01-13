@@ -77,11 +77,11 @@ We would like you to complete the following tasks:
 - [ ] Keep the current Dev environment.
 - [ ] Add a Test environment.
    - [ ] Access to http://{vagrant ip address}:8081
-   - [ ] Access to http://{vagrant ip address}:8081/vagrant/
+   - [ ] Access to http://{vagrant ip address}:8081/vault/
    - [ ] Access to http://{vagrant ip address}:8081/rabbitmq/    
 - [ ] Add a QA environment.
    - [ ] Access to http://{vagrant ip address}:8082
-   - [ ] Access to http://{vagrant ip address}:8082/vagrant/
+   - [ ] Access to http://{vagrant ip address}:8082/vault/
    - [ ] Access to http://{vagrant ip address}:8082/rabbitmq/ 
 - [ ] Improve the code.
    - [ ] Terraform plan / apply should be available to run within the Vagrant environment without issues.
