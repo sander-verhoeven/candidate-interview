@@ -86,7 +86,7 @@ We would like you to complete the following tasks:
    - [ ] Access to http://{vagrant ip address}:8082/rabbitmq/ 
 - [ ] Improve the code.
    - [ ] Terraform plan / apply should be available to run within the Vagrant environment without issues.
-- [ ] Add a README detailing your design decissions.
+- [ ] Add a README detailing your design decisions.
 
 :warning: We are reviewing your code and decisions, not external tools.
 
