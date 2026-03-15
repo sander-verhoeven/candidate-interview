@@ -1,1 +1,0 @@
-{"rsync":{"/vagrant":{"type":"rsync","rsync__exclude":["Vagrantfile",".git/"],"guestpath":"/vagrant","hostpath":"C:/git/sander/candidate-interview","disabled":false,"__vagrantfile":true,"exclude":["Vagrantfile",".git/"],"owner":"vagrant","group":"vagrant"}}}
