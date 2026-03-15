@@ -1,113 +1,133 @@
 terraform {
   required_providers {
     docker = {
-      source = "kreuzwerker/docker"
+      source  = "kreuzwerker/docker"
       version = "= 3.3.0"
     }
     vault = {
       version = "= 4.7.0"
+    }    
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
     }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.4"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
+
   }
 }
 
 provider "docker" {}
 
 provider "vault" {
-  address = "http://localhost:8200"
-  token   = "dev"
+  address = var.vaultAddress
+  token   = var.vaultToken
 }
 
-resource "docker_network" "rabbitmq" {
-  name = "rabbitmq"
+
+locals {
+  boundary = var.boundary.config
+}
+
+resource "docker_network" "docker_network" {
+  for_each = { for a in local.boundary.docker : a.name => a }
+
+  name = each.value.name
   ipam_config {
-    subnet = "172.18.1.32/28"
-    ip_range = "172.18.1.32/28"
-    gateway = "172.18.1.33"
+    subnet   = each.value.network.subnet
+    ip_range = each.value.network.ipRange
+    gateway  = each.value.network.gateway
   }
 }
 
-resource "docker_image" "rabbitmq" {
-  name = "rabbitmq:4.1.2-management-alpine"
+resource "docker_image" "docker_image" {
+  for_each = { for a in local.boundary.docker : a.name => a }
+
+  name = each.value.imageName
 }
 
-resource "docker_container" "rabbitmq" {
-  image = docker_image.rabbitmq.image_id
-  name = "rabbitmq"
+resource "docker_container" "docker_container" {
+  for_each = { for a in local.boundary.docker : a.name => a }
 
-  networks_advanced {
-    name = "rabbitmq"
+  image = docker_image.docker_image[each.key].image_id
+  name  = each.value.name
+
+  env = try(each.value.env, [])
+  
+  dynamic "ports" {
+    for_each = { for a in try(each.value.ports, []) : a.internal   => a }
+
+    content{
+      internal = ports.value.internal
+      external = ports.value.external
+    }
   }
 
-  env = [
-    "RABBITMQ_DEFAULT_USER=dev",
-    "RABBITMQ_DEFAULT_PASS=dev"
-  ]
+  dynamic "networks_advanced" {
+    for_each = { for a in try(each.value.networkAdvanced, []) : a.name => a }
+    content {
+      name = try(docker_network.docker_network[networks_advanced.value.name].name, networks_advanced.value.name) 
+    }
+  }
 
-  depends_on = [ 
-    docker_image.rabbitmq,
-    docker_network.rabbitmq
-  ]
+  dynamic "mounts" {
+    for_each = { for a in try(each.value.mounts, []) : a.target => a }
+  
+    content {
+      source = try(mounts.value.source, null)
+      target = try(mounts.value.target, null)
+      type   = try(mounts.value.type, null)
+    }
+  }
+
+
+  # depends_on = [ 
+  #   docker_image.rabbitmq,
+  #   docker_network.rabbitmq
+  # ]
 }
 
-resource "docker_image" "nginx" {
-  name = "nginx:1.27.5"
+
+# Random username (lowercase, alphanumeric, starts with a letter)
+resource "random_string" "rabbitmq_user" {
+  length  = 10
+  upper   = false
+  lower   = true
+  numeric = true
+  special = false
 }
 
-resource "docker_network" "nginx" {
-  name = "nginx"
-  ipam_config {
-    subnet = "172.18.1.0/28"
-    ip_range = "172.18.1.0/28"
-    gateway = "172.18.1.1"
-  }
+# Random password (strong, includes symbols)
+resource "random_password" "rabbitmq_pass" {
+  length           = 24
+  special          = true
+  override_special = "!@#$%^&*()-_=+[]{}<>?."
 }
 
-resource "docker_container" "nginx" {
-  image = docker_image.nginx.image_id
-  name = "nginx"
-
-  ports {
-    internal = 80
-    external = 8080
-  }
-
-  networks_advanced {
-    name = "nginx"
-  }
-
-  networks_advanced {
-    name = "rabbitmq"
-  }
-
-  networks_advanced {
-    name = "vault"
-  }
-
-  mounts {
-    source = "/vagrant/source/nginx/conf.d/default.conf"
-    target = "/etc/nginx/conf.d/default.conf"
-    type = "bind"
-  }
-
-  depends_on = [ 
-    docker_image.nginx,
-    docker_network.nginx
-  ]
-}
 
 resource "vault_generic_secret" "vault" {
-  path     = "secret/rabbitmq"
+  provider = vault
+  for_each = { for a in local.boundary.docker : a.name => a 
+  if a.name == "nginx" && local.boundary.env == "dev" }
+  
+  path = "secret/rabbitmq"  
 
   data_json = <<EOT
 {
-  "rabbitmq_user": "dev",
-  "rabbitmq_pass": "dev"
+  "rabbitmq_user": "${random_string.rabbitmq_user.result}",
+  "rabbitmq_pass": "${random_password.rabbitmq_pass.result}"
 }
 EOT
 
-  depends_on = [ 
-    docker_image.nginx,
-    docker_network.nginx
+  depends_on = [
+    docker_image.docker_image,
+    docker_network.docker_network
   ]
 }
 
