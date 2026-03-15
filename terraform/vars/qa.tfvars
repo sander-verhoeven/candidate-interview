@@ -40,7 +40,7 @@ boundary = {
             name = "rabbitmq"
           },
           {
-            name = "vault"
+            name = "vault-qa"
           }
         ]
         mounts = [
