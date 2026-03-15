@@ -114,7 +114,7 @@ resource "random_password" "rabbitmq_pass" {
 resource "vault_generic_secret" "vault" {
   provider = vault
   for_each = { for a in local.boundary.docker : a.name => a 
-  if a.name == "nginx" && local.boundary.env == "dev" }
+  if a.name == "nginx" }
   
   path = "secret/rabbitmq"  
 

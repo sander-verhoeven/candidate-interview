@@ -72,5 +72,5 @@ echo "run terraform apply"
 cp -a /vagrant/terraform/. ${HOME}/terraform/
 pushd ${HOME}/terraform
 terraform init
-terraform apply -auto-approve -var-file ./vars/dev.tfvars
+terraform apply -auto-approve -var-file ./vars/${APP_ENV}.tfvars
 popd
