@@ -1,4 +1,4 @@
-vaultAddress = "http://localhost:8300"
+vaultAddress = "http://localhost:8200"
 vaultToken   = "test"
 
 boundary = {
