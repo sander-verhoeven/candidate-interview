@@ -35,6 +35,38 @@ locals {
   boundary = var.boundary.config
 }
 
+# Random username (lowercase, alphanumeric, starts with a letter)
+resource "random_string" "rabbitmq_user" {
+  length  = 10
+  upper   = false
+  lower   = true
+  numeric = true
+  special = false
+}
+
+# Random password (strong, includes symbols)
+resource "random_password" "rabbitmq_pass" {
+  length           = 24
+  special          = true
+  override_special = "!@#$%^&*()-_=+[]{}<>?."
+}
+
+
+resource "vault_generic_secret" "vault" {
+  provider = vault
+  for_each = { for a in local.boundary.docker : a.name => a 
+  if a.name == "rabbitmq" }
+  
+  path = "secret/rabbitmq"  
+
+  data_json = <<EOT
+{
+  "RABBITMQ_DEFAULT_USER": "${random_string.rabbitmq_user.result}",
+  "RABBITMQ_DEFAULT_PASS": "${random_password.rabbitmq_pass.result}"
+}
+EOT
+}
+
 resource "docker_network" "docker_network" {
   for_each = { for a in local.boundary.docker : a.name => a }
 
@@ -58,8 +90,20 @@ resource "docker_container" "docker_container" {
   image = docker_image.docker_image[each.key].image_id
   name  = each.value.name
 
-  env = try(each.value.env, [])
   
+  env = [
+    for k, v in merge(
+      // Convert ["A=1","B=2"] -> { A = "1", B = "2" }
+      {
+        for item in tolist(try(each.value.env, [])) :
+        // safer split: keep '=' inside the value part, if present
+        split("=", item)[0] => join("=", slice(split("=", item), 1, length(split("=", item))))
+      },
+      // Use Vault map directly, not data_json; fallback to empty map
+      try(vault_generic_secret.vault[each.key].data, {})
+    ) : "${k}=${v}"
+  ]
+
   dynamic "ports" {
     for_each = { for a in try(each.value.ports, []) : a.internal   => a }
 
@@ -85,49 +129,4 @@ resource "docker_container" "docker_container" {
       type   = try(mounts.value.type, null)
     }
   }
-
-
-  # depends_on = [ 
-  #   docker_image.rabbitmq,
-  #   docker_network.rabbitmq
-  # ]
 }
-
-
-# Random username (lowercase, alphanumeric, starts with a letter)
-resource "random_string" "rabbitmq_user" {
-  length  = 10
-  upper   = false
-  lower   = true
-  numeric = true
-  special = false
-}
-
-# Random password (strong, includes symbols)
-resource "random_password" "rabbitmq_pass" {
-  length           = 24
-  special          = true
-  override_special = "!@#$%^&*()-_=+[]{}<>?."
-}
-
-
-resource "vault_generic_secret" "vault" {
-  provider = vault
-  for_each = { for a in local.boundary.docker : a.name => a 
-  if a.name == "nginx" }
-  
-  path = "secret/rabbitmq"  
-
-  data_json = <<EOT
-{
-  "rabbitmq_user": "${random_string.rabbitmq_user.result}",
-  "rabbitmq_pass": "${random_password.rabbitmq_pass.result}"
-}
-EOT
-
-  depends_on = [
-    docker_image.docker_image,
-    docker_network.docker_network
-  ]
-}
-

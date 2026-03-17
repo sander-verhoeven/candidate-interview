@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-TERRAFORM_VERSION="1.11.1"
-DOCKERCOMPOSE_VERSION="v2.32.2"
-HOME="/home/vagrant"
+# APP_ENV is passed from Vagrant (dev/test/qa)
+ENV_FILE="/vagrant/.env.${APP_ENV}"
+
+set -a
+. ${ENV_FILE}
+set +a
 
 
 if ! command -v unzip >/dev/null 2>&1; then
@@ -60,8 +63,6 @@ else
 fi
 
 pushd /vagrant
-# APP_ENV is passed from Vagrant (dev/test/qa)
-ENV_FILE="/vagrant/.env.${APP_ENV}"
 
 echo "[run.sh] Using ${ENV_FILE}"
 docker compose --env-file "${ENV_FILE}" up -d

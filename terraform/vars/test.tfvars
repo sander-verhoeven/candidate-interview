@@ -19,10 +19,10 @@ boundary = {
             name = "rabbitmq"
           }
         ]
-        env = [
-          "RABBITMQ_DEFAULT_USER=dev",
-          "RABBITMQ_DEFAULT_PASS=dev"
-        ]
+        # env = [
+        #   "RABBITMQ_DEFAULT_USER=dev",
+        #   "RABBITMQ_DEFAULT_PASS=dev"
+        # ]
       },
       {
         name = "nginx"
